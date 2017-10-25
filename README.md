@@ -1,8 +1,7 @@
-# micro-assembly-simulation
-
-## Experiments with assembly language
+# Experiments with assembly language
 Some experiments I did as a graduate student to explore and familiarise with assembly language.  
 
+## The Mic1
 The micro architecture simulator, Mic1, is offered in the classic book by Tanenbaum (2005), _Structured Computer Organization_, section 4.3.1 and an interpreter for the Mic1 microarchitechture specified in section 4.1.
 
 It is a set of tools to explore microarchitecture. It consist of an assembler for the Micro Assembly Language (MAL) and an interpreter for the Mic1 microarchitechture.
