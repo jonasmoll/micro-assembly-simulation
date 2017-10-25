@@ -1,0 +1,177 @@
+////	
+//	Assembly Program for the Mic1 Microarchitecture Simulator 
+//	
+//	File
+//		fact_setjmp.jas
+//	
+//	Time-stamp: <Sunday 10 April 2005, 15:40:29 - by jermiin>
+//  
+//	Author
+//		Jonas Jermiin Ravn Moll <jonas@jermiin.dk>
+//		
+//  Description
+//		Program to compute to factorial of a given integer value (k)
+//		Used to experiment and get familiar with the setjmp low level call in the c language
+//
+//  Usage
+//		To compile:  java ijvmasm fact_setjmp.jas
+//      This will create fact_setjmp.ijvm
+//
+//	To run
+//		java mic1sim mic1ijvm.mic1 fact_setjmp.ijvm
+//      Click the Run button
+////
+
+.constant
+k 5
+OBJREF 0x40
+.end-constant
+
+.main
+.var
+n
+i
+.end-var
+	
+start:	LDC_W k
+		BIPUSH 0x1
+		ISUB
+		IFEQ done 
+		ILOAD n					// n-1
+		BIPUSH 0x5
+		ISUB  			
+		ISTORE n
+		LDC_W OBJREF
+		LDC_W k
+		BIPUSH 0x3
+		INVOKEVIRTUAL mul
+		ISTORE i
+done:	LDC_W OBJREF
+		ILOAD i
+		INVOKEVIRTUAL print
+		HALT
+.end-main
+
+.method mul(a, x)
+.var
+j
+tmp
+.end-var
+		ILOAD a
+		DUP
+		ISTORE tmp				// tmp = a
+		DUP	   			
+		IADD			
+		ISTORE a				// a = a + a
+		BIPUSH 0x2
+		ISTORE j				// j = 2
+loop:	ILOAD j
+		ILOAD x
+		IF_ICMPEQ return		// if(x == j) goto return
+		ILOAD tmp
+		ILOAD a
+		IADD
+		ISTORE a				// a = a + tmp
+		IINC j 0x1				// j++
+		GOTO loop
+return:	ILOAD a
+		IRETURN
+.end-method
+
+//////////////////////
+// The method below converts a number into a string of
+// characters and prints them.  All of the characters
+// are pushed onto the stack, least significant
+// digit first, then popped off and printed.
+//////////////////////
+
+.method print( total ) 		
+.var
+place
+index
+.end-var
+
+print: 	BIPUSH 0x9		// there are 8 nibbles in each integer--setting
+						//   this as nine pushes 10 characters onto the
+ 						//   stack, thus a total of ten printed digits,
+						//   but setting this less does not remove the
+						//   two leading zeros, just removes significant
+						//   digits
+		ISTORE index
+		BIPUSH 0x1		// comparison bit
+		ISTORE place
+print1:	BIPUSH 0x0
+		ILOAD index		// index = index - 1
+		BIPUSH 0x1
+		ISUB
+		DUP
+		IFEQ pall		// if index = 0  goto pall
+		ISTORE index
+		ILOAD total		// else
+		ILOAD place		//
+		IAND			//   if 1st bit of current nibble is zero (total & place)
+		IFEQ print2		//     goto print2
+		BIPUSH 0x1		//   else set first bit of character
+		IADD
+print2: ILOAD place		//   place = place << 1 
+		DUP
+		IADD
+		ISTORE place
+		ILOAD total
+		ILOAD place
+		IAND			//   if 2nd bit of current nibble is zero (total & place)
+		IFEQ print3		//     goto print3
+		BIPUSH 0x2		//   else set second bit of character
+		IADD	
+print3: ILOAD place		//   place = place << 1
+		DUP
+		IADD
+		ISTORE place
+		ILOAD total
+		ILOAD place
+		IAND			//   if 3rd bit of current nibble is zero (total & place)
+		IFEQ print4		//     goto print4
+		BIPUSH 0x4		//   else set second bit of character
+		IADD	
+print4: ILOAD place		//   place = place << 1
+		DUP
+		IADD
+		ISTORE place
+		ILOAD total
+		ILOAD place
+		IAND			//   if 4th bit of current nibble is zero (total & place)
+		IFEQ print5		//     goto print5
+		BIPUSH 0x8		//   else set second bit of character
+		IADD	
+print5: ILOAD place		//   place = place << 1
+		DUP
+		IADD
+		ISTORE place
+		GOTO print1
+		
+pall:   POP				// Pop off leading 0's
+		POP
+		BIPUSH 0x9
+		ISTORE index
+pall1:	ILOAD index		// index = index - 1
+		BIPUSH 0x1
+		ISUB
+		DUP
+		IFEQ return		// if index = 0  return
+		ISTORE index
+		DUP
+		BIPUSH 0xa		// else if character < 0xa goto pall1
+		ISUB
+		IFLT pall2
+		BIPUSH 0x37		// else convert character to "A"-"F"
+		IADD
+		OUT				// print character
+		GOTO pall1		// goto pall (prepare & print next character)
+pall2:	BIPUSH 0x30		// convert character to "0"-"9"
+		IADD
+		OUT				// print character
+		GOTO pall1		// goto pall1 (prepare & print next character)
+return:	BIPUSH 0xa		// print cr
+		OUT
+		IRETURN			// no return value
+.end-method
